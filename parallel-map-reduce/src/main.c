@@ -2,9 +2,7 @@
 //  main.c
 //  C-MapReduce
 //
-//  Created by jeffrey on 1/12/15.
-//  Copyright © 2015 jeffrey. All rights reserved.
-//
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -14,12 +12,11 @@
 #include "wordutility.c" // for word parsing and counting operation
 #include "mergeutility.c" // for reduce tasks planning and execution
 
-/*
- * Put all GLOBAL variables here
- */
 int reducerCount = 0;
 int mapperCount = 0;
 int MAX_CHILDS = 0;
+
+#define MAC_BUCFERZ 1000
 
 int childIndex = 1; // current child process index
 
@@ -33,8 +30,6 @@ int mapperToMasterPipe[2]; // for Mapper -> Master pipe
 
 int masterToReducerPipe[2]; // for Master -> Reducer pipe
 int reducerToMasterPipe[2]; // for Reducer -> Master
-
-
 
 void reduce(char *reduceTask) {
     // implement the reduce operation here ...
@@ -64,21 +59,19 @@ void reducerRoutine() {
     
     int temp;
     
-    /* - the read command is blocking
-     * - subsequent lines after the read will be blocked until more data been fetched
-     * - the while loop will only break if the other side close the output pipe
-     * - set the fetch data size to a relative large number according to the real situatuin,
-     *   this could effectively avoid the input data to be chunked and transmitted out of order
-     *   which makes it impossible to ressemble the original data
-     */
-    while((temp = read(masterToReducerPipe[0], buf, 1000)) > 0) {
+    while((temp = read(masterToReducerPipe[0], buf, MAC_BUCFERZ)) > 0) {
         printf("reducer [PID: %d] %lu char read from pipe: [%s]\n", getpid(), strlen(buf), buf);
         
+        printf("Start Reduce Operation.\n");
         // execute the reduce operation
         reduce(buf);
         
+        printf("Reduce Complete.\n");
+        
         // inform master when reduce task finish
         reducerInformMaster();
+        
+        printf("Reduced from master.\n");
     }
     printf("reducer [PID: %d] process finished\n", getpid());
     
@@ -104,14 +97,7 @@ void mapperRoutine() {
     
     int temp;
     
-    /* - the read command is blocking
-     * - subsequent lines after the read will be blocked until more data been fetched
-     * - the while loop will only break if the other side close the output pipe
-     * - set the fetch data size to a relative large number according to the real situatuin,
-     *   this could effectively avoid the input data to be chunked and transmitted out of order
-     *   which makes it impossible to ressemble the original data
-     */
-    while((temp = read(masterToMapperPipe[0], buf, 1000)) > 0) {
+    while((temp = read(masterToMapperPipe[0], buf, MAC_BUCFERZ)) > 0) {
         printf("mapper [PID: %d] %lu char read from pipe: [%s]\n", getpid(), strlen(buf), buf);
         
         // execute the map operation
@@ -183,7 +169,8 @@ void masterWaitForReducer() {
         if (completedTaskCount >= reduceTasksCount) {
             break; // break the read roop if ALL callback from reducer tasks received
         } else {
-            sleep(1); // avoid reading too fast from pipe, wait for 1 second
+            sleep(1);
+            //usleep(450); // avoid reading too fast from pipe, wait for 1 second
         }
     }
     
@@ -329,8 +316,13 @@ void masterRoutine() {
 }
 
 void userRoutine() {
+    
+    printf("Start UserRoutine.\n\r");
+    
     // === wait for the wake-up signal from Master to indicate the completion of MapReduce tasks ===
     close(masterToParentPipe[1]); // avoid user write to input from master
+    
+    printf("Calloc new char..");
     
     char* buf = (char *) calloc(0, sizeof(char)); // initilize a dynamic char array for fetching data from pipe
     int temp;
@@ -342,7 +334,7 @@ void userRoutine() {
      *   this could effectively avoid the input data to be chunked and transmitted out of order
      *   which makes it impossible to ressemble the original data
      */
-    while((temp = read(masterToParentPipe[0], buf, 1000)) > 0) {
+    while((temp = read(masterToParentPipe[0], buf, MAC_BUCFERZ)) > 0) {
         printf("parent process %lu char read from pipe: [%s]\n", strlen(buf), buf);
         break;
     }
@@ -463,9 +455,13 @@ void initMapTasks() {
 }
 
 int main() {
+    printf("Start the initial mapping tasks.\n");
     initMapTasks();
+    printf("Init Child counters..\n");
     initChildsCounter();
+    printf("Create PIPES@!\n");
     createPipes();
+    printf("Fork to Child Processez\n");
     forkChild();
 }
 

@@ -80,7 +80,7 @@ char* generateMergeTask(char *inputArray) {
         if (tmpCounter >= MAX_FILES_PER_MERGE) {
             totalMergeCount++; // increment the total merge operation count
             
-            //printf("@ %d\n", mergedCount);
+            printf("@ %d\n", mergedCount);
             outputArray [mergedCount] = '\0' + (totalMergeCount);
             mergedCount++;
             tmpCounter = 0;
@@ -170,6 +170,8 @@ int getTotalMergeTask(int inputSize) {
     
     return totalMergeCount;
 }
+
+
 
 char* getFilename(char* param1, char* param2) {
     char *ext = ".txt";

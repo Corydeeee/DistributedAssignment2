@@ -95,7 +95,9 @@ char* copyString(char *inputString) {
 }
 
 void analyzeWordsCount(char *fName) {
-    //printf("%s\n", fName);
+    
+    printf("void analyzeWordsCount(char *fName) - %s\n", fName);
+    
     FILE *fpIn;
     fpIn = fopen(fName, "r");
     
@@ -294,7 +296,7 @@ int parseWords(char *fName) {
 	while ((temp = fgetc(fpIn)) != EOF) {
 		//printf("[%c]\n", temp);
         
-		if (temp == '\n' || temp == ' ' || temp == '?' || temp == ',' || temp == '.' || temp == '\"' ||
+		if (temp==':' || temp == '\t' || temp == '\n' || temp == ' ' || temp == '?' || temp == ',' || temp == '.' || temp == '\"' ||
             		temp == '!' || temp == '@' || temp == '~' || temp == '#' || temp == '$' || temp == '%' ||
             		temp == '%' || temp == '^' || temp == '&' || temp == '*' || temp == '(' || temp == ')' ||
             		temp == '-' || temp == '_' || temp == '{' || temp == '}' || temp == '[' || temp == ']' ||
